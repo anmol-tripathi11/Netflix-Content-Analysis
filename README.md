@@ -20,7 +20,7 @@ An end-to-end **SQL data analysis project** analyzing **8,800+ Netflix titles** 
 ```
 Netflix-Content-Analysis/
 │
-├── netflix_titles.csv              → Raw dataset (8,800+ Netflix titles)
+├── Netflix-Content-Analysis-Dataset.zip              → Raw dataset (8,800+ Netflix titles)
 └── Netflix-Content-Analysis.sql   → Full SQL script (exploration + cleaning + 15 business queries)
 ```
 
@@ -331,7 +331,7 @@ GROUP BY 1;
 1. Install **PostgreSQL** and **pgAdmin**
 2. Create a new database in pgAdmin
 3. Open and run `Netflix-Content-Analysis.sql`
-4. When importing `netflix_titles.csv` use pgAdmin's import tool with **comma delimiter** and **header row enabled**
+4. When importing `Netflix-Content-Analysis-Dataset.zip` use pgAdmin's import tool with **comma delimiter** and **header row enabled**
 5. Run queries section by section — Exploration → Cleaning → Business Problems
 
 ---
