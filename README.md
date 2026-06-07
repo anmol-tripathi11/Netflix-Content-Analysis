@@ -20,7 +20,7 @@ An end-to-end **SQL data analysis project** analyzing **8,800+ Netflix titles** 
 ```
 Netflix-Content-Analysis/
 │
-├── netflix_titles.csv              → Raw dataset (8,800+ Netflix titles)
+├── Netflix-Content-Analysis-Dataset.zip              → Raw dataset (8,800+ Netflix titles)
 └── Netflix-Content-Analysis.sql   → Full SQL script (exploration + cleaning + 15 business queries)
 ```
 
@@ -64,25 +64,196 @@ CREATE TABLE netflix
 
 ---
 
-### 📊 Business Problems & SQL Concepts Used
+### 📊 Business Problems & Solutions
 
-| # | Business Problem | SQL Concepts |
-|---|---|---|
-| 1 | Count of Movies vs TV Shows | `GROUP BY`, `COUNT` |
-| 2 | Most common rating per content type | `RANK()`, `PARTITION BY`, Subquery |
-| 3 | All movies released in a specific year | `WHERE`, Filtering |
-| 4 | Top 5 countries with most content | `UNNEST`, `STRING_TO_ARRAY`, `ORDER BY` |
-| 5 | Identify the longest movie | `MAX()`, Subquery |
-| 6 | Content added in the last 5 years | `CURRENT_DATE`, `INTERVAL` |
-| 7 | Movies/TV Shows by director 'Rajiv Chilaka' | `ILIKE`, Pattern Matching |
-| 8 | TV Shows with more than 5 seasons | `SPLIT_PART`, Type Casting |
-| 9 | Content count per genre | `UNNEST`, `STRING_TO_ARRAY`, `COUNT` |
-| 10 | Avg yearly content release from India (Top 5 years) | `EXTRACT`, `ROUND`, Subquery |
-| 11 | All movies listed as Documentaries | `ILIKE`, Pattern Matching |
-| 12 | Content with no director | `ILIKE` |
-| 13 | Salman Khan movies in the last 10 years | `EXTRACT`, `ILIKE`, Date Functions |
-| 14 | Top 10 actors in Indian-produced movies | `UNNEST`, `STRING_TO_ARRAY`, `ORDER BY` |
-| 15 | Categorize content as 'Good' vs 'Bad' based on keywords | `CTE`, `CASE WHEN`, `ILIKE` |
+**1. Content Type Distribution — Movies vs TV Shows**
+
+Objective: Measure how Netflix splits its library between Movies and TV Shows.
+```sql
+SELECT type, COUNT(*) AS count_by_type
+FROM netflix
+GROUP BY type;
+```
+
+---
+
+**2. Most Frequent Rating for Each Content Type**
+
+Objective: Identify the rating that appears most often for Movies and TV Shows separately using window functions.
+```sql
+SELECT type, rating
+FROM (
+    SELECT type, rating, COUNT(*),
+        RANK() OVER(PARTITION BY type ORDER BY COUNT(*) DESC) AS ranking
+    FROM netflix
+    GROUP BY 1, 2
+) AS t1
+WHERE ranking = 1;
+```
+
+---
+
+**3. All Movies Released in a Specific Year**
+
+Objective: Filter Movies by release year to track content volume for any given year (e.g., 2020).
+```sql
+SELECT * FROM netflix
+WHERE type = 'Movie' AND release_year = 2020;
+```
+
+---
+
+**4. Top 5 Countries Producing the Most Netflix Content**
+
+Objective: Split multi-valued country column and rank countries by total content contribution.
+```sql
+SELECT 
+    UNNEST(STRING_TO_ARRAY(country, ',')) AS countries_with_most_content,
+    COUNT(show_id) AS total_content
+FROM netflix
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 5;
+```
+
+---
+
+**5. Longest Movie on Netflix**
+
+Objective: Identify the movie with the maximum duration using a subquery comparison.
+```sql
+SELECT * FROM netflix
+WHERE type = 'Movie'
+AND duration = (SELECT MAX(duration) FROM netflix);
+```
+
+---
+
+**6. Content Added in the Last 5 Years**
+
+Objective: Use date arithmetic to retrieve recently added titles using INTERVAL.
+```sql
+SELECT * FROM netflix
+WHERE date_added >= CURRENT_DATE - INTERVAL '5 Years';
+```
+
+---
+
+**7. All Content Directed by 'Rajiv Chilaka'**
+
+Objective: Use case-insensitive pattern matching to filter by a specific director across multi-director entries.
+```sql
+SELECT * FROM netflix
+WHERE director ILIKE '%Rajiv Chilaka%';
+```
+
+---
+
+**8. TV Shows Running Longer Than 5 Seasons**
+
+Objective: Extract the numeric season count from a text column and apply a numeric filter.
+```sql
+SELECT * FROM netflix
+WHERE type = 'TV Show'
+AND SPLIT_PART(duration, ' ', 1)::NUMERIC > 5;
+```
+
+---
+
+**9. Total Content Count Per Genre**
+
+Objective: Expand comma-separated genre values into individual rows and count content per genre.
+```sql
+SELECT 
+    UNNEST(STRING_TO_ARRAY(listed_in, ',')) AS Genre,
+    COUNT(show_id) AS total_content
+FROM netflix
+GROUP BY 1;
+```
+
+---
+
+**10. Year-wise Average Content Released by India — Top 5 Years**
+
+Objective: Calculate the percentage share of yearly Indian content releases relative to India's total, and return the top 5 peak years.
+```sql
+SELECT 
+    EXTRACT(YEAR FROM date_added) AS Year,
+    COUNT(*) AS yearly_content,
+    ROUND(
+        COUNT(*)::NUMERIC / (SELECT COUNT(*) FROM netflix WHERE country = 'India') * 100, 2
+    ) AS avg_content_produced_in_percent
+FROM netflix
+WHERE country = 'India'
+GROUP BY 1;
+```
+
+---
+
+**11. All Documentary Movies**
+
+Objective: Filter the genre column using pattern matching to list all Documentaries.
+```sql
+SELECT * FROM netflix
+WHERE listed_in ILIKE '%Documentaries%';
+```
+
+---
+
+**12. Content With No Director Information**
+
+Objective: Surface all records where director data was missing (replaced with 'Not Given' during cleaning).
+```sql
+SELECT * FROM netflix
+WHERE director ILIKE '%Not Given%';
+```
+
+---
+
+**13. Salman Khan's Netflix Appearances in the Last 10 Years**
+
+Objective: Combine date extraction and cast pattern matching to track a specific actor's recent content.
+```sql
+SELECT * FROM netflix
+WHERE casts ILIKE '%Salman Khan%'
+AND release_year > EXTRACT(YEAR FROM CURRENT_DATE) - 10;
+```
+
+---
+
+**14. Top 10 Most Appearing Actors in Indian Productions**
+
+Objective: Expand comma-separated cast values, filter for Indian content, and rank actors by total appearances.
+```sql
+SELECT
+    UNNEST(STRING_TO_ARRAY(casts, ',')) AS actors,
+    COUNT(*) AS films_performed
+FROM netflix
+WHERE country ILIKE '%India%'
+AND casts != 'Not Given'
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 10;
+```
+
+---
+
+**15. Content Categorization — 'Good' vs 'Bad' Based on Keywords**
+
+Objective: Use a CTE with CASE WHEN logic to label content containing 'kill' or 'violence' in its description as 'Bad' and everything else as 'Good', then count each category.
+```sql
+WITH new_table AS (
+    SELECT *,
+        CASE
+            WHEN description ILIKE '%kill%' OR description ILIKE '%violence%' THEN 'Bad'
+            ELSE 'Good'
+        END AS category
+    FROM netflix
+)
+SELECT category, COUNT(*) AS total_content
+FROM new_table
+GROUP BY 1;
+```
 
 ---
 
