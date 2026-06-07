@@ -4,7 +4,7 @@ An end-to-end **SQL data analysis project** analyzing **8,800+ Netflix titles** 
 
 ---
 
-### 🧰 Tools & Technologies
+###  Tools & Technologies
 
 | Tool | Purpose |
 |---|---|
@@ -15,18 +15,18 @@ An end-to-end **SQL data analysis project** analyzing **8,800+ Netflix titles** 
 
 ---
 
-### 📁 File Structure
+###  File Structure
 
 ```
 Netflix-Content-Analysis/
 │
-├── Netflix-Content-Analysis-Dataset.zip              → Raw dataset (8,800+ Netflix titles)
+├── netflix_titles.csv              → Raw dataset (8,800+ Netflix titles)
 └── Netflix-Content-Analysis.sql   → Full SQL script (exploration + cleaning + 15 business queries)
 ```
 
 ---
 
-### 🗄️ Database Schema
+###  Database Schema
 
 ```sql
 CREATE TABLE netflix
@@ -48,19 +48,75 @@ CREATE TABLE netflix
 
 ---
 
-### 🔍 Project Workflow
+###  Project Workflow
 
 #### 1. Data Exploration
-- Counted total rows — **8,800+ titles**
-- Identified **2 content types** — Movies & TV Shows
-- Detected NULL values across all 12 columns
+
+**Count the total number of rows**
+```sql
+SELECT COUNT(*) AS Total_count
+FROM netflix;
+```
+
+**Preview sample records**
+```sql
+SELECT * FROM netflix
+LIMIT 10;
+```
+
+**Check distinct content types**
+```sql
+SELECT DISTINCT type FROM netflix;
+```
+
+**Detect NULL values across all columns**
+```sql
+SELECT 
+    COUNT(*) - COUNT(type)         AS type_null,
+    COUNT(*) - COUNT(title)        AS title_null,
+    COUNT(*) - COUNT(director)     AS director_null,
+    COUNT(*) - COUNT(casts)        AS casts_null,
+    COUNT(*) - COUNT(country)      AS country_null,
+    COUNT(*) - COUNT(date_added)   AS date_added_null,
+    COUNT(*) - COUNT(release_year) AS release_year_null,
+    COUNT(*) - COUNT(rating)       AS rating_null,
+    COUNT(*) - COUNT(duration)     AS duration_null,
+    COUNT(*) - COUNT(listed_in)    AS listed_in_null,
+    COUNT(*) - COUNT(description)  AS description
+FROM netflix;
+```
+
+---
 
 #### 2. Data Cleaning
-- Replaced NULL values in `director`, `casts`, and `country` columns with `'Not Given'`
-- Deleted rows with NULL values in `rating`, `duration`, and `date_added` columns
-- Ensured clean, analysis-ready data before running business queries
 
-#### 3. Business Problem Solving — 15 SQL Queries
+**Replace NULL values in `director`, `casts`, and `country` with 'Not Given'**
+```sql
+UPDATE netflix
+SET director = 'Not Given'
+WHERE director IS NULL OR director = '';
+
+UPDATE netflix
+SET casts = 'Not Given'
+WHERE casts IS NULL OR casts = '';
+
+UPDATE netflix
+SET country = 'Not Given'
+WHERE country IS NULL OR country = '';
+```
+
+**Delete rows where `rating`, `duration`, and `date_added` have NULL values**
+```sql
+DELETE FROM netflix WHERE rating IS NULL;
+
+DELETE FROM netflix WHERE duration IS NULL;
+
+DELETE FROM netflix WHERE date_added IS NULL;
+```
+
+---
+
+#### 3. Business Problems & Solutions — 15 SQL Queries
 
 ---
 
@@ -257,20 +313,20 @@ GROUP BY 1;
 
 ---
 
-### 💡 Key Insights
+###  Key Insights
 
-- 📽️ **Movies dominate** Netflix's library, significantly outnumbering TV Shows in total content count
-- 🏆 **TV-MA** is the most common rating for TV Shows and **TV-14** for Movies, indicating Netflix's primary focus on mature audiences
-- 🌍 **United States, India, and United Kingdom** are the top 3 countries producing the most Netflix content
-- 🇮🇳 India's Netflix content peaked in specific years — revealing strategic expansion timelines in the Indian market
-- 🎭 **International Movies** and **Dramas** are the most dominant genres across the platform
-- 🕵️ A significant portion of content has **no director listed**, highlighting data quality issues in Netflix's metadata
-- 🎬 Bollywood actor **Salman Khan** appeared in multiple Netflix titles within the last 10 years, reflecting growing Bollywood presence
-- ⚠️ Content categorized as **'Bad'** (containing keywords like 'kill' or 'violence' in description) vs **'Good'** reveals how much of Netflix's library leans toward intense or mature storytelling
+-  **Movies dominate** Netflix's library, significantly outnumbering TV Shows in total content count
+-  **TV-MA** is the most common rating for TV Shows and **TV-14** for Movies, indicating Netflix's primary focus on mature audiences
+-  **United States, India, and United Kingdom** are the top 3 countries producing the most Netflix content
+-  India's Netflix content peaked in specific years — revealing strategic expansion timelines in the Indian market
+-  **International Movies** and **Dramas** are the most dominant genres across the platform
+-  A significant portion of content has **no director listed**, highlighting data quality issues in Netflix's metadata
+-  Bollywood actor **Salman Khan** appeared in multiple Netflix titles within the last 10 years, reflecting growing Bollywood presence
+-  Content categorized as **'Bad'** (containing keywords like 'kill' or 'violence' in description) vs **'Good'** reveals how much of Netflix's library leans toward intense or mature storytelling
 
 ---
 
-### ▶️ How to Run
+###  How to Run
 
 1. Install **PostgreSQL** and **pgAdmin**
 2. Create a new database in pgAdmin
@@ -280,7 +336,7 @@ GROUP BY 1;
 
 ---
 
-### 📂 Dataset
+###  Dataset
 
 - **Source:** [Kaggle — Netflix Movies and TV Shows](https://www.kaggle.com/datasets/shivamb/netflix-shows)
 - **Rows:** 8,800+
